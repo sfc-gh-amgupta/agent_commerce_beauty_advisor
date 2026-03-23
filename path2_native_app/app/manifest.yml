@@ -1,0 +1,27 @@
+manifest_version: 2
+
+version:
+  name: v1
+
+artifacts:
+  readme: readme.md
+  setup_script: setup_script.sql
+  container_services:
+    images:
+      - /AGENT_COMMERCE/UTIL/AGENT_COMMERCE_REPO/agent-commerce-backend:latest
+  default_web_endpoint:
+    service: app_schema.agent_commerce_backend
+    endpoint: api
+
+configuration:
+  log_level: INFO
+  trace_level: ALWAYS
+  grant_callback: app_schema.grant_callback
+
+privileges:
+  - CREATE COMPUTE POOL:
+      description: "Create a compute pool for the SPCS backend service (face/skin analysis)"
+  - BIND SERVICE ENDPOINT:
+      description: "Expose the backend API endpoint and allow external network access"
+  - CREATE WAREHOUSE:
+      description: "Create a warehouse for Cortex Search, Semantic Views, and query execution"

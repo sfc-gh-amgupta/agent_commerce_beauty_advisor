@@ -1,0 +1,18 @@
+spec:
+  containers:
+    - name: backend
+      image: /AGENT_COMMERCE/UTIL/AGENT_COMMERCE_REPO/agent-commerce-backend:latest
+      resources:
+        requests:
+          cpu: 1
+          memory: 4Gi
+        limits:
+          cpu: 2
+          memory: 8Gi
+      readinessProbe:
+        port: 8000
+        path: /health
+  endpoints:
+    - name: api
+      port: 8000
+      public: true
