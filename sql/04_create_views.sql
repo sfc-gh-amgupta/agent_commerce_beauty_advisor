@@ -325,46 +325,4 @@ SELECT
     i.posted_at
 FROM INFLUENCER_MENTIONS i;
 
--- ===========================================================================
--- SCHEMA: UTIL (1 view)
--- ===========================================================================
-USE SCHEMA UTIL;
 
-create or replace view ECONOMIC_INDICATORS(
-	DATE,
-	VARIABLE,
-	VARIABLE_NAME,
-	VALUE,
-	UNIT,
-	INDICATOR_CATEGORY,
-	FREQUENCY,
-	IS_SEASONALLY_ADJUSTED
-) as SELECT
-    DATE,
-    VARIABLE,
-    VARIABLE_NAME,
-    VALUE,
-    UNIT,
-    CASE
-        WHEN VARIABLE_NAME ILIKE '%CPI%' THEN 'CPI'
-        WHEN VARIABLE_NAME ILIKE '%unemployment%' THEN 'Unemployment'
-        WHEN VARIABLE_NAME ILIKE '%retail sales%' THEN 'Retail Sales'
-        WHEN VARIABLE_NAME ILIKE '%GDP%' OR VARIABLE_NAME ILIKE '%gross domestic product%' THEN 'GDP'
-        WHEN VARIABLE_NAME ILIKE '%consumer credit%' THEN 'Consumer Credit'
-        WHEN VARIABLE_NAME ILIKE '%mortgage%' OR VARIABLE_NAME ILIKE '%house price%' THEN 'Housing'
-        WHEN VARIABLE_NAME ILIKE '%interest rate%' OR VARIABLE_NAME ILIKE '%fed funds%' THEN 'Interest Rates'
-        ELSE 'Other'
-    END AS INDICATOR_CATEGORY,
-    CASE
-        WHEN VARIABLE_NAME ILIKE '%Monthly%' THEN 'Monthly'
-        WHEN VARIABLE_NAME ILIKE '%Quarterly%' THEN 'Quarterly'
-        WHEN VARIABLE_NAME ILIKE '%Annual%' THEN 'Annual'
-        WHEN VARIABLE_NAME ILIKE '%Weekly%' THEN 'Weekly'
-        ELSE 'Other'
-    END AS FREQUENCY,
-    CASE
-        WHEN VARIABLE_NAME ILIKE '%seasonally adjusted%' AND VARIABLE_NAME NOT ILIKE '%not seasonally%' THEN TRUE
-        ELSE FALSE
-    END AS IS_SEASONALLY_ADJUSTED
-FROM SNOWFLAKE_PUBLIC_DATA.PUBLIC_DATA_FREE.FINANCIAL_ECONOMIC_INDICATORS_TIMESERIES
-WHERE GEO_ID = 'country/USA';

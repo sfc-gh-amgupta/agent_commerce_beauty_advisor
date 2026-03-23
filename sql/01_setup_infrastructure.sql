@@ -79,14 +79,29 @@ CREATE OR REPLACE FILE FORMAT CSV_FORMAT
     ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE;
 
 -- ---------------------------------------------------------------------------
--- 9. Grant database-level privileges to role
+-- 9. Network Rule & External Access Integration (for SPCS + Cortex Agent API)
 -- ---------------------------------------------------------------------------
 USE ROLE ACCOUNTADMIN;
+USE SCHEMA AGENT_COMMERCE.UTIL;
 
+CREATE NETWORK RULE IF NOT EXISTS SPCS_BACKEND_RULE
+    TYPE = 'HOST_PORT'
+    MODE = 'EGRESS'
+    VALUE_LIST = ('*.snowflakecomputing.com', '*.snowflakecomputing.app')
+    COMMENT = 'Allow egress to Snowflake endpoints for Cortex Agent API and SPCS';
+
+CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION SPCS_BACKEND_ACCESS
+    ALLOWED_NETWORK_RULES = (AGENT_COMMERCE.UTIL.SPCS_BACKEND_RULE)
+    ENABLED = TRUE;
+
+-- ---------------------------------------------------------------------------
+-- 10. Grant database-level privileges to role
+-- ---------------------------------------------------------------------------
 GRANT USAGE ON DATABASE AGENT_COMMERCE TO ROLE AGENT_COMMERCE_ROLE;
 GRANT ALL ON DATABASE AGENT_COMMERCE TO ROLE AGENT_COMMERCE_ROLE;
 GRANT ALL ON ALL SCHEMAS IN DATABASE AGENT_COMMERCE TO ROLE AGENT_COMMERCE_ROLE;
 GRANT USAGE ON WAREHOUSE AGENT_COMMERCE_WH TO ROLE AGENT_COMMERCE_ROLE;
+GRANT CREATE INTEGRATION ON ACCOUNT TO ROLE AGENT_COMMERCE_ROLE;
 
 USE ROLE AGENT_COMMERCE_ROLE;
 USE DATABASE AGENT_COMMERCE;

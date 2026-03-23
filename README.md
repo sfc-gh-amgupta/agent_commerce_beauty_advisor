@@ -31,7 +31,16 @@ AI-powered beauty shopping assistant with face recognition, skin analysis, and i
 
 ### Path 0: Cortex Code (Fastest)
 
-If you have Cortex Code (CoCo) installed, just type:
+If you have Cortex Code (CoCo) installed:
+
+1. Install the CoCo skill (one-time):
+```bash
+mkdir -p ~/.snowflake/cortex/skills/deploy-agent-commerce
+curl -sL https://raw.githubusercontent.com/sfc-gh-amgupta/agent_commerce_beauty_advisor/main/.snowflake/cortex/skills/deploy-agent-commerce/SKILL.md \
+  -o ~/.snowflake/cortex/skills/deploy-agent-commerce/SKILL.md
+```
+
+2. Then just type in CoCo:
 
 > deploy agent commerce demo
 

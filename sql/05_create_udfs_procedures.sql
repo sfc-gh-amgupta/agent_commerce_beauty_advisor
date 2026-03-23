@@ -177,7 +177,7 @@ AS '
 -- ---------------------------------------------------------------------------
 USE SCHEMA PRODUCTS;
 
-CREATE OR REPLACE DATA METRIC FUNCTION "COST_EXCEEDS_PRICE"("ARG_T" TABLE(NUMBER(38,0), NUMBER(38,0)))
+CREATE OR REPLACE DATA METRIC FUNCTION "COST_EXCEEDS_PRICE"("ARG_T" TABLE("ARG_COST" NUMBER(38,0), "ARG_PRICE" NUMBER(38,0)))
 RETURNS NUMBER(38,0)
 LANGUAGE SQL
 COMMENT='Counts rows where cost exceeds price'
@@ -355,26 +355,18 @@ EXTERNAL_ACCESS_INTEGRATIONS = (SPCS_BACKEND_ACCESS)
 AS '
 import requests
 import json
-import os
 
 def call_agent(user_message, history_json):
     try:
-        # Get auth token from Snowpark context
         from snowflake.snowpark.context import get_active_session
         session = get_active_session()
 
-        # Build the API URL
-        # Use internal format that works from Python UDFs
-        account = "sfsehol-si-ae-enablement-retail-kvldzi"
+        account = session.sql("SELECT LOWER(CURRENT_ORGANIZATION_NAME() || ''-'' || CURRENT_ACCOUNT_NAME())").collect()[0][0]
         api_url = f"https://{account}.snowflakecomputing.com/api/v2/databases/AGENT_COMMERCE/schemas/UTIL/agents/AGENTIC_COMMERCE_ASSISTANT:run"
 
-        # Parse history
         history = json.loads(history_json) if history_json else []
-
-        # Build messages
         messages = history + [{"role": "user", "content": user_message}]
 
-        # Build request
         request_body = {
             "model": "claude-4-sonnet",
             "messages": messages,
@@ -382,8 +374,6 @@ def call_agent(user_message, history_json):
             "stream": False
         }
 
-        # Make the request using session token
-        # Note: Python UDFs with EXTERNAL_ACCESS_INTEGRATIONS can make network calls
         response = requests.post(
             api_url,
             json=request_body,
@@ -415,16 +405,32 @@ CREATE OR REPLACE FUNCTION "TEST_SPCS_CONNECTIVITY"()
 RETURNS VARIANT
 LANGUAGE PYTHON
 RUNTIME_VERSION = '3.10'
-PACKAGES = ('requests')
+PACKAGES = ('snowflake-snowpark-python','requests')
 HANDLER = 'test_connection'
 EXTERNAL_ACCESS_INTEGRATIONS = (SPCS_BACKEND_ACCESS)
 AS '
 import requests
 def test_connection():
     try:
-        url = "https://eshhuw-sfsehol-si-ae-enablement-retail-kvldzi.snowflakecomputing.app/health"
+        from snowflake.snowpark.context import get_active_session
+        session = get_active_session()
+        rows = session.sql("SELECT SYSTEM$GET_SERVICE_STATUS(''AGENT_COMMERCE.UTIL.AGENT_COMMERCE_BACKEND'')").collect()
+        import json
+        svc_info = json.loads(rows[0][0])
+        ingress_url = None
+        for entry in svc_info:
+            if "endpoints" in str(entry):
+                pass
+        endpoints_rows = session.sql("SHOW ENDPOINTS IN SERVICE AGENT_COMMERCE.UTIL.AGENT_COMMERCE_BACKEND").collect()
+        for row in endpoints_rows:
+            if row["name"] == "api":
+                ingress_url = row["ingress_url"]
+                break
+        if not ingress_url:
+            return {"success": False, "error": "Could not find api endpoint ingress URL"}
+        url = f"https://{ingress_url}/health"
         response = requests.get(url, timeout=10)
-        return {"success": True, "status_code": response.status_code, "response": response.json()}
+        return {"success": True, "status_code": response.status_code, "response": response.json(), "ingress_url": ingress_url}
     except Exception as e:
         return {"success": False, "error": str(e)}
 ';
